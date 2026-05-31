@@ -1,0 +1,6 @@
+{
+  "name": "Simple ERP",
+  "description": "A lightweight, clean, and fast ERP application covering purchase orders, sales orders, goods receipts, delivery orders, invoices, and dynamic inventory reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

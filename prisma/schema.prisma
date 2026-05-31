@@ -1,0 +1,293 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Item {
+  id                  String               @id @default(uuid())
+  code                String               @unique
+  name                String
+  description         String?
+  unit                String               @default("pcs")
+  defaultPrice        Double               @default(0.0) @map("default_price")
+  defaultCost         Double               @default(0.0) @map("default_cost")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  purchaseOrderItems  PurchaseOrderItem[]
+  goodsReceiptItems   GoodsReceiptItem[]
+  purchaseInvoiceItems PurchaseInvoiceItem[]
+  salesOrderItems     SalesOrderItem[]
+  deliveryOrderItems   DeliveryOrderItem[]
+  salesInvoiceItems   SalesInvoiceItem[]
+  stockMovements       StockMovement[]
+  warehouseStocks     WarehouseStock[]
+
+  @@map("items")
+}
+
+model Customer {
+  id        String       @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  salesOrders SalesOrder[]
+
+  @@map("customers")
+}
+
+model Supplier {
+  id             String          @id @default(uuid())
+  name           String
+  email          String?
+  phone          String?
+  address        String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model Warehouse {
+  id             String          @id @default(uuid())
+  name           String
+  location       String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  goodsReceipts  GoodsReceipt[]
+  deliveryOrders DeliveryOrder[]
+  stockMovements StockMovement[]
+  warehouseStocks WarehouseStock[]
+
+  @@map("warehouses")
+}
+
+model PurchaseOrder {
+  id           String              @id @default(uuid())
+  poNumber     String              @unique @map("po_number")
+  supplierId   String              @map("supplier_id")
+  supplier     Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  orderDate    DateTime            @map("order_date")
+  expectedDate DateTime            @map("expected_date")
+  status       String              @default("Draft") // Draft, Submitted, Completed
+  remarks      String?
+  totalAmount  Float               @default(0.0) @map("total_amount")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  items        PurchaseOrderItem[]
+  goodsReceipts GoodsReceipt[]
+  purchaseInvoices PurchaseInvoice[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String        @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  itemId          String        @map("item_id")
+  item            Item          @relation(fields: [itemId], references: [id])
+  quantity        Float
+  unitPrice       Float         @map("unit_price")
+  total           Float
+
+  @@map("purchase_order_items")
+}
+
+model GoodsReceipt {
+  id           String             @id @default(uuid())
+  grNumber     String             @unique @map("gr_number")
+  poId         String             @map("po_id")
+  purchaseOrder PurchaseOrder     @relation(fields: [poId], references: [id])
+  warehouseId  String             @map("warehouse_id")
+  warehouse    Warehouse          @relation(fields: [warehouseId], references: [id])
+  receiptDate  DateTime           @map("receipt_date")
+  remarks      String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  items        GoodsReceiptItem[]
+
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id             String       @id @default(uuid())
+  goodsReceiptId String       @map("goods_receipt_id")
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  itemId         String       @map("item_id")
+  item           Item         @relation(fields: [itemId], references: [id])
+  receivedQty    Float        @map("received_qty")
+
+  @@map("goods_receipt_items")
+}
+
+model PurchaseInvoice {
+  id              String                @id @default(uuid())
+  piNumber        String                @unique @map("pi_number")
+  supplierId      String                @map("supplier_id")
+  poId            String?               @map("po_id")
+  purchaseOrder   PurchaseOrder?        @relation(fields: [poId], references: [id])
+  invoiceDate     DateTime              @map("invoice_date")
+  dueDate         DateTime              @map("due_date")
+  status          String                @default("Draft") // Draft, Unpaid, Paid
+  remarks         String?
+  totalAmount     Float                 @default(0.0) @map("total_amount")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  items           PurchaseInvoiceItem[]
+
+  @@map("purchase_invoices")
+}
+
+model PurchaseInvoiceItem {
+  id                String          @id @default(uuid())
+  purchaseInvoiceId String          @map("purchase_invoice_id")
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  itemId            String          @map("item_id")
+  item              Item            @relation(fields: [itemId], references: [id])
+  quantity          Float
+  price             Float
+  total             Float
+
+  @@map("purchase_invoice_items")
+}
+
+model SalesOrder {
+  id           String           @id @default(uuid())
+  soNumber     String           @unique @map("so_number")
+  customerId   String           @map("customer_id")
+  customer     Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderDate    DateTime         @map("order_date")
+  deliveryDate DateTime         @map("delivery_date")
+  status       String           @default("Draft") // Draft, Submitted, Completed
+  remarks      String?
+  totalAmount  Float            @default(0.0) @map("total_amount")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  items        SalesOrderItem[]
+  deliveryOrders DeliveryOrder[]
+  salesInvoices SalesInvoice[]
+
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id           String     @id @default(uuid())
+  salesOrderId String     @map("sales_order_id")
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  itemId       String     @map("item_id")
+  item         Item       @relation(fields: [itemId], references: [id])
+  quantity     Float
+  unitPrice    Float      @map("unit_price")
+  total        Float
+
+  @@map("sales_order_items")
+}
+
+model DeliveryOrder {
+  id           String              @id @default(uuid())
+  doNumber     String              @unique @map("do_number")
+  soId         String              @map("so_id")
+  salesOrder   SalesOrder          @relation(fields: [soId], references: [id])
+  warehouseId  String              @map("warehouse_id")
+  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id])
+  deliveryDate DateTime            @map("delivery_date")
+  remarks      String?
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  items        DeliveryOrderItem[]
+
+  @@map("delivery_orders")
+}
+
+model DeliveryOrderItem {
+  id              String        @id @default(uuid())
+  deliveryOrderId String        @map("delivery_order_id")
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  itemId          String        @map("item_id")
+  item            Item          @relation(fields: [itemId], references: [id])
+  deliveredQty    Float         @map("delivered_qty")
+
+  @@map("delivery_order_items")
+}
+
+model SalesInvoice {
+  id          String             @id @default(uuid())
+  siNumber    String             @unique @map("si_number")
+  customerId  String             @map("customer_id")
+  soId        String?            @map("so_id")
+  salesOrder  SalesOrder?        @relation(fields: [soId], references: [id])
+  invoiceDate DateTime           @map("invoice_date")
+  dueDate     DateTime           @map("due_date")
+  status      String             @default("Draft") // Draft, Unpaid, Paid
+  remarks     String?
+  totalAmount Float              @default(0.0) @map("total_amount")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  items       SalesInvoiceItem[]
+
+  @@map("sales_invoices")
+}
+
+model SalesInvoiceItem {
+  id             String       @id @default(uuid())
+  salesInvoiceId String       @map("sales_invoice_id")
+  salesInvoice   SalesInvoice @relation(fields: [salesInvoiceId], references: [id], onDelete: Cascade)
+  itemId         String       @map("item_id")
+  item           Item         @relation(fields: [itemId], references: [id])
+  quantity       Float
+  price          Float
+  total          Float
+
+  @@map("sales_invoice_items")
+}
+
+model StockMovement {
+  id          String    @id @default(uuid())
+  date        DateTime  @default(now())
+  type        String    @map("type") // GR (Goods Receipt), DO (Delivery Order), Initial
+  refNo       String    @map("ref_no")
+  itemId      String    @map("item_id")
+  item        Item      @relation(fields: [itemId], references: [id])
+  warehouseId String    @map("warehouse_id")
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  qtyIn       Float     @default(0.0) @map("qty_in")
+  qtyOut      Float     @default(0.0) @map("qty_out")
+  balanceAfter Float     @default(0.0) @map("balance_after")
+  remarks     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("stock_movements")
+}
+
+model WarehouseStock {
+  id          String    @id @default(uuid())
+  itemId      String    @map("item_id")
+  item        Item      @relation(fields: [itemId], references: [id])
+  warehouseId String    @map("warehouse_id")
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  currentQty  Float     @default(0.0) @map("current_qty")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@unique([itemId, warehouseId])
+  @@map("warehouse_stock")
+}

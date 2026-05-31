@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Base resets & High Density UI enhancements */
+@layer base {
+  body {
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    font-size: 13px;
+  }
+
+  /* Make standard text inputs, date scopes, and list gates tighter and compact */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+    border-color: var(--color-slate-200) !important;
+    transition: all 150ms ease;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="date"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-blue-500) !important;
+    box-shadow: 0 0 0 1px var(--color-blue-500) !important;
+    outline: none !important;
+  }
+
+  /* Compact scrollbars for dense grids */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-slate-300);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-slate-400);
+  }
+}
+
+@layer utilities {
+  /* Scoped layout modifications inside main elements to force space-saving density */
+  main h2 {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
+    color: var(--color-slate-900) !important;
+  }
+
+  main h3 {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--color-slate-800) !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  main p {
+    font-size: 11px !important;
+    color: var(--color-slate-500) !important;
+  }
+
+  /* Force tables inside main view layout to be exceptionally tight & high density */
+  main table {
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+    line-height: normal !important;
+  }
+
+  main table th {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: var(--color-slate-500) !important;
+    background-color: var(--color-slate-100) !important;
+    border-bottom: 1px solid var(--color-slate-200) !important;
+    line-height: 1.25 !important;
+  }
+
+  main table td {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    color: var(--color-slate-700) !important;
+    border-bottom: 1px solid var(--color-slate-100) !important;
+    vertical-align: middle !important;
+  }
+
+  main table tr:hover td {
+    background-color: var(--color-slate-50) !important;
+  }
+
+  /* Compact Card Layout definitions */
+  main .bg-white.border.border-slate-200 {
+    border-radius: 4px !important;
+    border-color: var(--color-slate-200) !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+  }
+
+  /* Standard Card padding density */
+  main .p-6, main .p-5 {
+    padding: 1rem !important; /* tight 16px block padding */
+  }
+
+  main .gap-5, main .gap-6 {
+    gap: 1rem !important; /* 16px layout gaps */
+  }
+
+  main .space-y-6, main .space-y-8 {
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  main .space-y-6 > * + *, main .space-y-8 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  /* Override standard button wrappers in modules */
+  main button.bg-slate-900,
+  main button[class*="bg-slate-900"],
+  main button[class*="bg-slate-950"] {
+    background-color: var(--color-blue-600) !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    border-radius: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-family: var(--font-mono) !important;
+    border: none !important;
+    transition: all 150ms ease !important;
+  }
+
+  main button.bg-slate-900:hover,
+  main button[class*="bg-slate-900"]:hover,
+  main button[class*="bg-slate-950"]:hover {
+    background-color: var(--color-blue-700) !important;
+  }
+
+  main button.bg-slate-900 svg,
+  main button[class*="bg-slate-900"] svg,
+  main button[class*="bg-slate-950"] svg {
+    width: 13px !important;
+    height: 13px !important;
+    color: #ffffff !important;
+  }
+
+  main button.bg-white.border.border-slate-300 {
+    font-size: 11px !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    border-radius: 4px !important;
+    border-color: var(--color-slate-300) !important;
+  }
+
+  /* Transform general roundings for dense UI panels */
+  main .rounded-xl,
+  main .rounded-lg,
+  main .rounded-2xl {
+    border-radius: 4px !important;
+  }
+
+  /* Badge styling consistency */
+  .bg-green-50, .bg-teal-50 {
+    background-color: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+    border-radius: 3px !important;
+  }
+
+  .bg-blue-50, .bg-sky-50 {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+    border-radius: 3px !important;
+  }
+
+  .bg-slate-100 {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 3px !important;
+  }
+
+  /* Custom ID Highlight references */
+  .font-mono.text-xs.font-bold.text-slate-900 {
+    color: var(--color-blue-600) !important;
+    background-color: var(--color-blue-50) !important;
+    border: 1px solid var(--color-blue-105);
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+  }
+}
