@@ -6,7 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { initializeFirestore, collection, doc, getDocs, setDoc, deleteDoc, getDocFromServer } from 'firebase/firestore';
 import {
   Item,
   Customer,
@@ -704,8 +704,11 @@ try {
 
   if (config) {
     const app = initializeApp(config);
-    firebaseDb = getFirestore(app, config.firestoreDatabaseId);
-    console.log('Firebase Firestore initialized successfully in dbStore!');
+    firebaseDb = initializeFirestore(app, {
+      databaseId: config.firestoreDatabaseId || '(default)',
+      experimentalForceLongPolling: true,
+    } as any);
+    console.log('Firebase Firestore initialized successfully in dbStore (Long Polling)!');
   }
 } catch (err) {
   console.error('Failed to initialize Firebase Firestore:', err);
@@ -803,32 +806,64 @@ class Database {
       return;
     }
     try {
+      console.log('Verifying Firestore database connectivity on startup...');
+      const testDoc = doc(firebaseDb, '_check_connection', 'ping');
+      const testPromise = getDocFromServer(testDoc);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore connection check timed out')), 2000));
+      
+      await Promise.race([testPromise, timeoutPromise]);
+      console.log('Firestore connectivity check succeeded!');
+    } catch (err: any) {
+      const errMsg = err.message || String(err);
+      console.warn('Firestore database connectivity check failed:', errMsg);
+      if (
+        errMsg.toLowerCase().includes('not-found') || 
+        errMsg.toLowerCase().includes('not_found') || 
+        errMsg.toLowerCase().includes('offline') || 
+        errMsg.toLowerCase().includes('timeout') || 
+        errMsg.toLowerCase().includes('timed out')
+      ) {
+        console.warn('Disabling Firestore and falling back to robust local file database to prevent console spam.');
+        firebaseDb = null;
+        this.saveLocalBackup();
+        return;
+      }
+    }
+
+    try {
       console.log('Synchronizing with live Firestore database...');
       let databaseIsEmpty = true;
 
-      const promises = KEYS.map(async (key) => {
-        try {
-          const colRef = collection(firebaseDb, key);
-          const snapshot = await getDocs(colRef);
-          const list: any[] = [];
-          snapshot.forEach((doc) => {
-            list.push({ id: doc.id, ...doc.data() });
-          });
-          if (list.length > 0) {
-            databaseIsEmpty = false;
+      // Wrap-with-timeout logic to prevent Vercel Serverless timeout (1.5 seconds)
+      const fetchAllWithTimeout = async () => {
+        const promises = KEYS.map(async (key) => {
+          try {
+            const colRef = collection(firebaseDb, key);
+            const snapshot = await getDocs(colRef);
+            const list: any[] = [];
+            snapshot.forEach((doc) => {
+              list.push({ id: doc.id, ...doc.data() });
+            });
+            if (list.length > 0) {
+              databaseIsEmpty = false;
+            }
+            return { key, list };
+          } catch (err) {
+            handleFirestoreError(err, OperationType.GET, key);
+            throw err;
           }
-          return { key, list };
-        } catch (err) {
-          handleFirestoreError(err, OperationType.GET, key);
-          throw err;
-        }
-      });
+        });
+        return await Promise.all(promises);
+      };
 
-      const results = await Promise.all(promises);
+      const results = await Promise.race([
+        fetchAllWithTimeout(),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Firestore sync timed out')), 1500))
+      ]);
 
       if (databaseIsEmpty) {
-        console.log('Firestore is empty. Provisioning dummy seed data to clean cloud DB...');
-        await this.uploadAllToFirestore();
+        console.log('Firestore is empty. Provisioning dummy seed data to clean cloud DB in background...');
+        this.uploadAllToFirestore().catch(e => console.error('Error in background seeding:', e));
       } else {
         results.forEach(({ key, list }) => {
           (this.data as any)[key] = list;
@@ -862,7 +897,10 @@ class Database {
         });
       });
       if (promises.length > 0) {
-        await Promise.all(promises);
+        await Promise.race([
+          Promise.all(promises),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Pushing seed data timed out')), 3000))
+        ]);
         console.log('Seeded data loaded into cloud Firestore.');
       }
     } catch (err) {
