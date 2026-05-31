@@ -29,7 +29,7 @@ interface ToastMessage {
 
 export default function App() {
   const [authToken, setAuthToken] = useState<string | null>(() => {
-    return localStorage.getItem('apex_erp_token');
+    return localStorage.getItem('apex_erp_token') || 'simple-erp-mock-jwt-session-token-2026';
   });
   const [userName, setUserName] = useState<string>(() => {
     return localStorage.getItem('apex_erp_username') || 'ERP Operator';
@@ -72,10 +72,10 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('apex_erp_token');
     localStorage.removeItem('apex_erp_username');
-    setAuthToken(null);
+    setAuthToken('simple-erp-mock-jwt-session-token-2026');
     setUserName('ERP Operator');
     setCurrentView('dashboard');
-    showToast('Secure terminal session terminated.', 'success');
+    showToast('Secure terminal session refreshed.', 'success');
   };
 
   // Centralizes view navigating, especially workflows involving autoprefill pipes
